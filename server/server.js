@@ -5,7 +5,7 @@ const Router = require('koa-router');
 const app = new Koa();
 const router = new Router();
 const session = require('koa-session');
-const sessionStore = require('./lib/sessionStore')();
+const sessionStore = require('./db/sessionStore')();
 
 app.keys = ['chensonghao939'];
 app.use(

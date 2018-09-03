@@ -1,4 +1,4 @@
-const excuteSql = require('../db/query');
+const excuteSql = require('./query');
 
 const Store = opts => {
 	opts = opts || {};
@@ -19,25 +19,21 @@ const Store = opts => {
 		async get(sid, maxAge, { rolling }) {
 			const sql = `SELECT sess FROM ${tableName} WHERE sid = $1 AND expire >= to_timestamp($2)`;
 			const data = await query(sql, [sid, currentTimestamp()]);
-			console.log(`get:${data.sess}`);
 			return typeof data.sess === 'string' ? JSON.parse(data.sess) : data.sess;
 		},
 		async set(sid, sess, maxAge, { rolling, changed }) {
 			const expireTime = getExpireTime(maxAge);
 			const sqlUpdate = `UPDATE ${tableName} SET sess = $1, expire = to_timestamp($2) WHERE sid = $3 RETURNING sid`;
 			const sidRow = await query(sqlUpdate, [sess, expireTime, sid]);
-			console.log(`set1:${sid}`);
 			if (!sidRow) {
 				const sqlDelete = `DELETE FROM ${tableName} WHERE expire < to_timestamp($1)`;
 				const sqlInsert = `INSERT INTO ${tableName} (sess, expire, sid)
 				SELECT $1, to_timestamp($2), $3 WHERE NOT EXISTS (SELECT 1 FROM ${tableName} WHERE sid = $4)`;
 				await query(sqlInsert, [sess, expireTime, sid, sid]);
 				await query(sqlDelete, [currentTimestamp()]);
-				console.log(`set2:${sid}`);
 			}
 		},
 		async destroy(sid) {
-			console.log(`destroy:${sid}`);
 			await query(`DELETE FROM ${tableName} WHERE sid = $1`, [sid]);
 		}
 	};
